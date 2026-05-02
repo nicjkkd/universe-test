@@ -8,7 +8,7 @@ import { createProductSchema, type CreateProductInput } from "@/lib/schemas"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { FormItem, FormLabel, FormMessage } from "@/components/ui/form"
+import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 
 interface Props {
   onSuccess: () => void
@@ -19,7 +19,7 @@ export function CreateProductForm({ onSuccess }: Props) {
     register,
     handleSubmit,
     reset,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<CreateProductInput>({
     resolver: zodResolver(createProductSchema),
   })
@@ -34,46 +34,43 @@ export function CreateProductForm({ onSuccess }: Props) {
 
   return (
     <form onSubmit={handleSubmit((data) => mutation.mutate(data))} className="flex flex-col gap-4">
-      <FormItem>
-        <FormLabel htmlFor="name" error={!!errors.name}>
-          Name
-        </FormLabel>
-        <Input id="name" placeholder="Product name" {...register("name")} />
+      <FormItem hasError={!!errors.name}>
+        <FormLabel>Name</FormLabel>
+        <FormControl>
+          <Input placeholder="Product name" {...register("name")} />
+        </FormControl>
         <FormMessage>{errors.name?.message}</FormMessage>
       </FormItem>
 
-      <FormItem>
-        <FormLabel htmlFor="description" error={!!errors.description}>
-          Description
-        </FormLabel>
-        <Textarea
-          id="description"
-          placeholder="Product description"
-          {...register("description")}
-        />
+      <FormItem hasError={!!errors.description}>
+        <FormLabel>Description</FormLabel>
+        <FormControl>
+          <Textarea placeholder="Product description" {...register("description")} />
+        </FormControl>
         <FormMessage>{errors.description?.message}</FormMessage>
       </FormItem>
 
-      <FormItem>
-        <FormLabel htmlFor="price" error={!!errors.price}>
-          Price
-        </FormLabel>
-        <Input
-          id="price"
-          type="number"
-          step="0.01"
-          min="0"
-          placeholder="0.00"
-          {...register("price")}
-        />
+      <FormItem hasError={!!errors.price}>
+        <FormLabel>Price</FormLabel>
+        <FormControl>
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            {...register("price", { valueAsNumber: true })}
+          />
+        </FormControl>
         <FormMessage>{errors.price?.message}</FormMessage>
       </FormItem>
 
       {mutation.isError && (
-        <p className="text-destructive text-sm">Failed to create product. Try again.</p>
+        <p className="text-destructive text-sm">
+          {mutation.error instanceof Error ? mutation.error.message : "Failed to create product. Try again."}
+        </p>
       )}
 
-      <Button type="submit" disabled={mutation.isPending} className="mt-1">
+      <Button type="submit" disabled={mutation.isPending || isSubmitting} className="mt-1">
         {mutation.isPending ? "Creating…" : "Create Product"}
       </Button>
     </form>

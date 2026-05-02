@@ -1,25 +1,37 @@
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+import { productSchema, productsPageSchema } from './schemas'
+import type { Product, ProductsPage } from './schemas'
 
-export interface Product {
-  id: string
-  name: string
-  description: string
-  price: string
-  createdAt: string
+export type { Product, ProductsPage }
+
+if (process.env.NODE_ENV === 'production' && !process.env.NEXT_PUBLIC_API_URL) {
+  throw new Error('[api] NEXT_PUBLIC_API_URL must be set in production')
 }
 
-export interface ProductsPage {
-  items: Product[]
-  total: number
-  page: number
-  limit: number
-  totalPages: number
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001'
+
+export class ApiError extends Error {
+  constructor(
+    public readonly status: number,
+    public readonly body: string,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'ApiError'
+  }
+}
+
+async function assertOk(res: Response): Promise<void> {
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new ApiError(res.status, body, `HTTP ${res.status}`)
+  }
 }
 
 export async function fetchProducts(page: number, limit: number): Promise<ProductsPage> {
-  const res = await fetch(`${BASE}/products?page=${page}&limit=${limit}`)
-  if (!res.ok) throw new Error('Failed to fetch products')
-  return res.json() as Promise<ProductsPage>
+  const params = new URLSearchParams({ page: String(page), limit: String(limit) })
+  const res = await fetch(`${BASE}/products?${params}`)
+  await assertOk(res)
+  return productsPageSchema.parse(await res.json())
 }
 
 export async function createProduct(data: {
@@ -32,11 +44,11 @@ export async function createProduct(data: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
-  if (!res.ok) throw new Error('Failed to create product')
-  return res.json() as Promise<Product>
+  await assertOk(res)
+  return productSchema.parse(await res.json())
 }
 
 export async function deleteProduct(id: string): Promise<void> {
   const res = await fetch(`${BASE}/products/${id}`, { method: 'DELETE' })
-  if (!res.ok) throw new Error('Failed to delete product')
+  await assertOk(res)
 }

@@ -1,21 +1,16 @@
 "use client"
 
-import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { Trash2 } from "lucide-react"
-import { deleteProduct, type Product } from "@/lib/api"
+import { type Product } from "@/lib/api"
 import { Button } from "@/components/ui/button"
 
 interface Props {
   products: Product[]
+  onDelete: (id: string) => void
+  pendingId: string | null
 }
 
-export function ProductTable({ products }: Props) {
-  const qc = useQueryClient()
-  const deleteMutation = useMutation({
-    mutationFn: deleteProduct,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products"] }),
-  })
-
+export function ProductTable({ products, onDelete, pendingId }: Props) {
   return (
     <div className="rounded-xl border border-border overflow-hidden">
       <table className="w-full text-sm">
@@ -51,17 +46,17 @@ export function ProductTable({ products }: Props) {
                   {product.description}
                 </td>
                 <td className="px-4 py-3 text-right font-mono">
-                  ${Number(product.price).toFixed(2)}
+                  ${product.price.toFixed(2)}
                 </td>
                 <td className="px-4 py-3 text-muted-foreground">
-                  {new Date(product.createdAt).toLocaleDateString()}
+                  {new Date(product.createdAt).toLocaleDateString("en-US")}
                 </td>
                 <td className="px-4 py-3 text-right">
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    onClick={() => deleteMutation.mutate(product.id)}
-                    disabled={deleteMutation.isPending}
+                    onClick={() => onDelete(product.id)}
+                    disabled={pendingId === product.id}
                     aria-label="Delete product"
                   >
                     <Trash2 className="text-muted-foreground" />

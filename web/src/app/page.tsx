@@ -1,5 +1,10 @@
+import { Suspense } from "react"
 import { ProductsPage } from "@/components/products/products-page"
 
-export default function Home() {
-  return <ProductsPage />
+export default function ProductsRoute() {
+  return (
+    <Suspense>
+      <ProductsPage />
+    </Suspense>
+  )
 }
