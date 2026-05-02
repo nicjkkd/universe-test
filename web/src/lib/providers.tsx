@@ -2,6 +2,7 @@
 
 import { QueryCache, QueryClient, QueryClientProvider, MutationCache } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { Toaster } from 'sonner'
 import { useState, type PropsWithChildren } from 'react'
 
 export function Providers({ children }: PropsWithChildren) {
@@ -20,6 +21,7 @@ export function Providers({ children }: PropsWithChildren) {
   return (
     <QueryClientProvider client={client}>
       {children}
+      <Toaster richColors closeButton position="bottom-right" />
       {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   )
