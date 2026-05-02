@@ -34,6 +34,7 @@ export class SqsService {
       );
     } catch (err) {
       this.logger.error(`Failed to publish ${type}`, err);
+      throw err;
     }
   }
 }
