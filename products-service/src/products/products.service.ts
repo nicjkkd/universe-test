@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SqsService } from '../sqs/sqs.service';
 import { CreateProductDto } from './dto';
+import { Prisma } from '../../generated/prisma/client';
 
 @Injectable()
 export class ProductsService {
@@ -17,9 +18,17 @@ export class ProductsService {
   }
 
   async remove(id: string) {
-    const exists = await this.prisma.product.findUnique({ where: { id } });
-    if (!exists) throw new NotFoundException(`Product ${id} not found`);
-    await this.prisma.product.delete({ where: { id } });
+    try {
+      await this.prisma.product.delete({ where: { id } });
+    } catch (err) {
+      if (
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === 'P2025'
+      ) {
+        throw new NotFoundException(`Product ${id} not found`);
+      }
+      throw err;
+    }
     await this.sqs.publish('product.deleted', { id });
   }
 

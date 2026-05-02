@@ -13,11 +13,11 @@ export class SqsService {
       endpoint: config.get<string>('SQS_ENDPOINT'),
       region: config.get<string>('SQS_REGION'),
       credentials: {
-        accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID')!,
-        secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY')!,
+        accessKeyId: config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: config.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
       },
     });
-    this.queueUrl = config.get<string>('SQS_QUEUE_URL')!;
+    this.queueUrl = config.getOrThrow<string>('SQS_QUEUE_URL');
   }
 
   async publish(type: string, payload: unknown): Promise<void> {

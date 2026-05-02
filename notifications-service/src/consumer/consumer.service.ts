@@ -23,11 +23,11 @@ export class ConsumerService implements OnModuleInit, OnModuleDestroy {
       endpoint: config.get<string>('SQS_ENDPOINT'),
       region: config.get<string>('SQS_REGION'),
       credentials: {
-        accessKeyId: config.get<string>('AWS_ACCESS_KEY_ID')!,
-        secretAccessKey: config.get<string>('AWS_SECRET_ACCESS_KEY')!,
+        accessKeyId: config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: config.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
       },
     });
-    this.queueUrl = config.get<string>('SQS_QUEUE_URL')!;
+    this.queueUrl = config.getOrThrow<string>('SQS_QUEUE_URL');
   }
 
   onModuleInit(): void {
@@ -48,6 +48,7 @@ export class ConsumerService implements OnModuleInit, OnModuleDestroy {
             QueueUrl: this.queueUrl,
             MaxNumberOfMessages: 10,
             WaitTimeSeconds: 20,
+            VisibilityTimeout: 60,
           }),
         );
 
@@ -65,8 +66,17 @@ export class ConsumerService implements OnModuleInit, OnModuleDestroy {
     Body?: string;
     ReceiptHandle?: string;
   }): Promise<void> {
+    if (!message.Body) {
+      this.logger.warn('Received message with no body; skipping');
+      return;
+    }
+    if (!message.ReceiptHandle) {
+      this.logger.warn('Received message with no ReceiptHandle; skipping');
+      return;
+    }
+
     try {
-      const body = JSON.parse(message.Body ?? '{}') as {
+      const body = JSON.parse(message.Body) as {
         type: string;
         payload: unknown;
         occurredAt: string;
@@ -77,7 +87,7 @@ export class ConsumerService implements OnModuleInit, OnModuleDestroy {
       await this.client.send(
         new DeleteMessageCommand({
           QueueUrl: this.queueUrl,
-          ReceiptHandle: message.ReceiptHandle!,
+          ReceiptHandle: message.ReceiptHandle,
         }),
       );
     } catch {
