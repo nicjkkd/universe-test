@@ -52,29 +52,36 @@ export class ConsumerService implements OnModuleInit, OnModuleDestroy {
         );
 
         for (const message of result.Messages ?? []) {
-          try {
-            const body = JSON.parse(message.Body ?? '{}') as {
-              type: string;
-              payload: unknown;
-              occurredAt: string;
-            };
-            this.logger.log(
-              `[${body.type}] ${JSON.stringify(body.payload)} — ${body.occurredAt}`,
-            );
-            await this.client.send(
-              new DeleteMessageCommand({
-                QueueUrl: this.queueUrl,
-                ReceiptHandle: message.ReceiptHandle!,
-              }),
-            );
-          } catch {
-            this.logger.error('Failed to process message', message.Body);
-          }
+          await this.processMessage(message);
         }
       } catch (err) {
         this.logger.error('SQS poll error', err);
         await new Promise((r) => setTimeout(r, 2000));
       }
+    }
+  }
+
+  private async processMessage(message: {
+    Body?: string;
+    ReceiptHandle?: string;
+  }): Promise<void> {
+    try {
+      const body = JSON.parse(message.Body ?? '{}') as {
+        type: string;
+        payload: unknown;
+        occurredAt: string;
+      };
+      this.logger.log(
+        `[${body.type}] ${JSON.stringify(body.payload)} — ${body.occurredAt}`,
+      );
+      await this.client.send(
+        new DeleteMessageCommand({
+          QueueUrl: this.queueUrl,
+          ReceiptHandle: message.ReceiptHandle!,
+        }),
+      );
+    } catch {
+      this.logger.error('Failed to process message', message.Body);
     }
   }
 }
