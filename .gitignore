@@ -6,3 +6,4 @@ dist
 .env.docker
 *.log
 .DS_Store
+.claude/
