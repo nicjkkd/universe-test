@@ -14,7 +14,7 @@ export class ProductsService {
   async create(dto: CreateProductDto) {
     const product = await this.prisma.product.create({ data: dto });
     await this.sqs.publish('product.created', product);
-    return product;
+    return { ...product, price: product.price.toNumber() };
   }
 
   async remove(id: string) {
@@ -41,6 +41,12 @@ export class ProductsService {
       }),
       this.prisma.product.count(),
     ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return {
+      items: items.map((p) => ({ ...p, price: p.price.toNumber() })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 }

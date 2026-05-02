@@ -9,13 +9,15 @@ export class SqsService {
   private readonly queueUrl: string;
 
   constructor(private readonly config: ConfigService) {
+    const accessKeyId = config.get<string>('AWS_ACCESS_KEY_ID');
+    const secretAccessKey = config.get<string>('AWS_SECRET_ACCESS_KEY');
+
     this.client = new SQSClient({
       endpoint: config.get<string>('SQS_ENDPOINT'),
-      region: config.get<string>('SQS_REGION'),
-      credentials: {
-        accessKeyId: config.getOrThrow<string>('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: config.getOrThrow<string>('AWS_SECRET_ACCESS_KEY'),
-      },
+      region: config.getOrThrow<string>('SQS_REGION'),
+      ...(accessKeyId && secretAccessKey
+        ? { credentials: { accessKeyId, secretAccessKey } }
+        : {}),
     });
     this.queueUrl = config.getOrThrow<string>('SQS_QUEUE_URL');
   }
@@ -26,6 +28,7 @@ export class SqsService {
         new SendMessageCommand({
           QueueUrl: this.queueUrl,
           MessageBody: JSON.stringify({
+            version: 1,
             type,
             payload,
             occurredAt: new Date().toISOString(),

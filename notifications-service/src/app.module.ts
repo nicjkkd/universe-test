@@ -3,13 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { ConsumerModule } from './consumer/consumer.module';
 
 function validateConfig(config: Record<string, unknown>): Record<string, unknown> {
-  const required = [
-    'SQS_ENDPOINT',
-    'SQS_REGION',
-    'AWS_ACCESS_KEY_ID',
-    'AWS_SECRET_ACCESS_KEY',
-    'SQS_QUEUE_URL',
-  ];
+  const required = ['SQS_REGION', 'SQS_QUEUE_URL'];
   const missing = required.filter((key) => !config[key]);
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
